@@ -14,6 +14,13 @@ datasource db {
 }
 
 model File {
-  id       Int    @id @default(autoincrement())
-  picture  String? // Champ pour stocker l'URL de l'image
+  id            Int    @id @default(autoincrement())
+  nom           String
+  prenom        String
+  birthDate     DateTime
+  genre         String
+  inscription   String
+  telephone     String
+  ecoleOrigine  String
+  picture       String? // Champ pour stocker l'URL de l'image
 }
