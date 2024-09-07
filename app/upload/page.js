@@ -15,6 +15,8 @@ export default function UploadPage() {
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentImageId, setCurrentImageId] = useState(null);
 
   const [searchInscription, setSearchInscription] = useState('');
   const [searchNomPrenom, setSearchNomPrenom] = useState('');
@@ -91,22 +93,27 @@ export default function UploadPage() {
       formData.append('telephone', telephone);
       formData.append('classId', selectedClass);
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      const url = isEditing ? `/api/update/${currentImageId}` : '/api/upload';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         body: formData,
       });
 
       if (response.ok) {
         const { url } = await response.json();
-        alert(`Image uploadée avec succès ! URL: ${url}`);
+        alert(`${isEditing ? 'Modification' : 'Ajout'} réussie ! URL: ${url}`);
         fetchImages();
         setShowForm(false);
+        setIsEditing(false);
+        setCurrentImageId(null);
       } else {
         const errorData = await response.json();
-        alert(`Erreur lors du téléchargement de l'image: ${errorData.message}`);
+        alert(`Erreur lors de l${isEditing ? 'a modification' : 'ajout de l\'image'}: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('Erreur lors du téléchargement de l\'image:', error);
+      console.error(`Erreur lors de l${isEditing ? 'a modification' : 'ajout de l\'image'}`, error);
       alert('Une erreur s\'est produite. Veuillez réessayer plus tard.');
     }
   };
@@ -133,6 +140,22 @@ export default function UploadPage() {
     }
   };
 
+  // Fonction pour ouvrir le formulaire d'édition avec les informations de l'élève
+  const handleEdit = (img) => {
+    setNom(img.nom);
+    setPrenom(img.prenom);
+    setBirthDate(img.birthDate);
+    setEcoleOrigine(img.ecoleOrigine);
+    setGenre(img.genre);
+    setInscription(img.inscription);
+    setTelephone(img.telephone);
+    setSelectedClass(img.classId);
+    setImage(null); // Ne pas préremplir l'image
+    setCurrentImageId(img.id);
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
   // Filtrage des images en fonction des critères de recherche
   const filteredImages = images.filter((img) => {
     const matchesInscription = img.inscription.toLowerCase().includes(searchInscription.toLowerCase());
@@ -150,13 +173,13 @@ export default function UploadPage() {
         onClick={() => setShowForm(true)}
         className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 mb-8"
       >
-        Ajouter une Image
+        {isEditing ? 'Modifier un élève' : 'Ajouter un élève'}
       </button>
 
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-60 z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-            <h2 className="text-3xl font-semibold mb-6">Ajouter un Eleves</h2>
+            <h2 className="text-3xl font-semibold mb-6">{isEditing ? 'Modifier un élève' : 'Ajouter un élève'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 mb-2">Nom</label>
@@ -204,13 +227,12 @@ export default function UploadPage() {
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 mb-2">Genre</label>
                 <select
-                  id="genre"
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
                   className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="" disabled>Sélectionnez le genre</option>
+                  <option value="">Sélectionner</option>
                   <option value="Masculin">Masculin</option>
                   <option value="Féminin">Féminin</option>
                 </select>
@@ -240,15 +262,16 @@ export default function UploadPage() {
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 mb-2">Classe</label>
                 <select
-                  id="class"
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
                   className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="" disabled>Sélectionnez une classe</option>
+                  <option value="">Sélectionner une classe</option>
                   {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>{cls.niveau}</option>
+                    <option key={cls.id} value={cls.id}>
+                      {cls.niveau}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -261,83 +284,95 @@ export default function UploadPage() {
                   required
                 />
               </div>
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white py-2 px-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
-                >
-                  Télécharger
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg shadow-lg hover:bg-gray-400 transition duration-300"
-                >
-                  Annuler
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
+              >
+                {isEditing ? 'Mettre à jour' : 'Ajouter'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setIsEditing(false);
+                  setCurrentImageId(null);
+                }}
+                className="bg-red-600 text-white py-2 px-4 rounded-lg shadow-lg hover:bg-red-700 transition duration-300"
+              >
+                Annuler
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      <div className="w-full max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-lg mt-8">
-        <h2 className="text-3xl font-semibold mb-6">List des éléves</h2>
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center">
-          <input
-            type="text"
-            placeholder="Recherche par inscription"
-            value={searchInscription}
-            onChange={(e) => setSearchInscription(e.target.value)}
-            className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm mb-4 sm:mb-0 sm:mr-4"
-          />
-          <input
-            type="text"
-            placeholder="Recherche par nom/prénom"
-            value={searchNomPrenom}
-            onChange={(e) => setSearchNomPrenom(e.target.value)}
-            className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm mb-4 sm:mb-0 sm:mr-4"
-          />
-          <select
-            value={searchGenre}
-            onChange={(e) => setSearchGenre(e.target.value)}
-            className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm"
-          >
-            <option value="">Tous les genres</option>
-            <option value="Masculin">Masculin</option>
-            <option value="Féminin">Féminin</option>
-          </select>
-        </div>
-        <table className="w-full table-auto border-collapse bg-white shadow-md rounded-lg">
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Rechercher par inscription"
+          value={searchInscription}
+          onChange={(e) => setSearchInscription(e.target.value)}
+          className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        />
+        <input
+          type="text"
+          placeholder="Rechercher par nom et prénom"
+          value={searchNomPrenom}
+          onChange={(e) => setSearchNomPrenom(e.target.value)}
+          className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        />
+        <select
+          value={searchGenre}
+          onChange={(e) => setSearchGenre(e.target.value)}
+          className="p-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        >
+          <option value="">Tous les genres</option>
+          <option value="Masculin">Masculin</option>
+          <option value="Féminin">Féminin</option>
+        </select>
+      </div>
+
+      <div className="w-full">
+        <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-lg">
           <thead>
-            <tr className="bg-gray-200">
-              <th className="p-3 border-b text-left">N°inscription</th>
-              <th className="p-3 border-b text-left">Nom</th>
-              <th className="p-3 border-b text-left">Prénom</th>
-              <th className="p-3 border-b text-left">Date de Naissance</th>
-              <th className="p-3 border-b text-left">École d'origine</th>
-              <th className="p-3 border-b text-left">Genre</th>
-              <th className="p-3 border-b text-left">Téléphone</th>
-              <th className="p-3 border-b text-left">Classe</th>
-              <th className="p-3 border-b text-left">Image</th>
-              <th className="p-3 border-b text-left">Actions</th>
+            <tr className="border-b border-gray-200">
+              <th className="py-3 px-6 text-left">N°inscription</th>
+              <th className="py-3 px-6 text-left">Nom</th>
+              <th className="py-3 px-6 text-left">Prénom</th>
+              <th className="py-3 px-6 text-left">Date de Naissance</th>
+              <th className="py-3 px-6 text-left">École d'origine</th>
+              <th className="py-3 px-6 text-left">Genre</th>
+              <th className="py-3 px-6 text-left">Téléphone</th>
+              <th className="py-3 px-6 text-left">Classe</th>
+              <th className="py-3 px-6 text-left">Image</th>
+              <th className="py-3 px-6 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredImages.map((img) => (
-              <tr key={img.id} className="hover:bg-gray-50 transition duration-300">
-                <td className="p-3 border-b text-left">{img.inscription}</td>
-                <td className="p-3 border-b text-left">{img.nom}</td>
-                <td className="p-3 border-b text-left">{img.prenom}</td>
-                <td className="p-3 border-b text-left">{img.birthDate}</td>
-                <td className="p-3 border-b text-left">{img.ecoleOrigine}</td>
-                <td className="p-3 border-b text-left">{img.genre}</td>
-                <td className="p-3 border-b text-left">{img.telephone}</td>
-                <td className="p-3 border-b text-left">{getClassName(img.classId)}</td>
-                <td className="p-3 border-b text-left">
-                  <img src={img.url} alt="Image" className="w-20 h-20 object-cover rounded-full" />
+            {filteredImages.map(img => (
+              <tr key={img.id}>
+                <td className="py-3 px-6">{img.inscription}</td>
+                <td className="py-3 px-6">{img.nom}</td>
+                <td className="py-3 px-6">{img.prenom}</td>
+                <td className="py-3 px-6">{img.birthDate}</td>
+                <td className="py-3 px-6">{img.ecoleOrigine}</td>
+                <td className="py-3 px-6">{img.genre}</td>
+                <td className="py-3 px-6">{img.telephone}</td>
+                <td className="py-3 px-6">{getClassName(img.classId)}</td>
+                <td className="py-3 px-6">
+                  <img
+                    src={img.url}
+                    alt={`Image ${img.id}`}
+                    className="w-12 h-12 object-cover rounded-full"
+                  />
                 </td>
-                <td className="p-3 border-b text-left">
+                <td className="py-3 px-6">
+                  <button
+                    onClick={() => handleEdit(img)}
+                    className="bg-yellow-500 text-white py-1 px-3 rounded-lg shadow-lg hover:bg-yellow-600 transition duration-300 mr-2"
+                  >
+                    U
+                  </button>
                   <button
                     onClick={() => handleDeleteImage(img.id)}
                     className="bg-red-600 text-white py-1 px-3 rounded-lg shadow-lg hover:bg-red-700 transition duration-300"
