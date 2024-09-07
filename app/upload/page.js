@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 export default function UploadPage() {
   const [image, setImage] = useState(null);
@@ -165,6 +167,26 @@ export default function UploadPage() {
     return matchesInscription && matchesNomPrenom && matchesGenre;
   });
 
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(filteredImages.map(img => ({
+      Inscription: img.inscription,
+      Nom: img.nom,
+      Prénom: img.prenom,
+      DateDeNaissance: img.birthDate,
+      EcoleDorigine: img.ecoleOrigine,
+      Genre: img.genre,
+      Téléphone: img.telephone,
+      Classe: getClassName(img.classId)
+    })));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Élèves');
+
+    const fileName = 'eleves.xlsx';
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    saveAs(new Blob([wbout], { type: 'application/octet-stream' }), fileName);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
       <h1 className="text-4xl font-bold text-gray-800 mb-8">Gestion des éléves</h1>
@@ -175,6 +197,13 @@ export default function UploadPage() {
       >
         {isEditing ? 'Modifier un élève' : 'Ajouter un élève'}
       </button>
+      <button
+          onClick={exportToExcel}
+          className="bg-green-600 text-white py-2 px-6 rounded-lg shadow-lg hover:bg-green-700 transition duration-300"
+        >
+          Exporter en Excel
+        </button>
+        <br /><br />
 
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-60 z-50">
