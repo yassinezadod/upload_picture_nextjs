@@ -36,6 +36,7 @@ export async function GET() {
           genre: file.genre,  // Récupération du champ genre
           inscription: file.inscription,  // Récupération du champ inscription
           telephone: file.telephone,  // Récupération du champ telephone
+          classId: file.classId,  // Ajout du classId
           fileName: path.basename(file.picture),  // Nom du fichier
           fileData: fileBuffer.toString('base64'),  // Conversion en base64
           mimeType: mimeType,  // Type MIME

@@ -17,8 +17,9 @@ export async function POST(req) {
     const genre = data.get('genre');
     const inscription = data.get('inscription');
     const telephone = data.get('telephone');
+    const classId = parseInt(data.get('classId'));
 
-    if (!image || !nom || !prenom || !birthDate || !ecoleOrigine || !genre || !inscription || !telephone) {
+    if (!image || !nom || !prenom || !birthDate || !ecoleOrigine || !genre || !inscription || !telephone || isNaN(classId)) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -45,6 +46,7 @@ export async function POST(req) {
         genre: genre,
         inscription: inscription,
         telephone: telephone,
+        classId: classId,
       },
     });
 

@@ -19,8 +19,22 @@ model File {
   prenom        String
   birthDate     DateTime
   genre         String
+  classId       Int
   inscription   String
   telephone     String
   ecoleOrigine  String
   picture       String? // Champ pour stocker l'URL de l'image
+  
+  // Relation avec la classe
+  class         Class   @relation(fields: [classId], references: [id])
+}
+
+model Class {
+  id        Int       @id @default(autoincrement())
+  niveau    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relation inverse avec File
+  files     File[]    // Une classe peut avoir plusieurs fichiers (étudiants)
 }
