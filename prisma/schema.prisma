@@ -27,6 +27,7 @@ model File {
   
   // Relation avec la classe
   class         Class   @relation(fields: [classId], references: [id])
+   payments      Payment[]
 }
 
 model Class {
@@ -38,3 +39,38 @@ model Class {
   // Relation inverse avec File
   files     File[]    // Une classe peut avoir plusieurs fichiers (étudiants)
 }
+
+model Payment {
+  id          Int           @id @default(autoincrement())
+  fileId      Int
+  amount      Float
+  paymentDate DateTime
+  period      PaymentPeriod // Enum pour définir le mois ou la période du paiement
+  status      PaymentStatus
+  reference   String        @unique // Référence unique pour chaque paiement
+  
+  // Relations
+  file        File          @relation(fields: [fileId], references: [id])
+}
+
+enum PaymentStatus {
+  PAID       // Payé
+  UNPAID     // Non payé
+  PENDING    // En attente
+}
+
+enum PaymentPeriod {
+  JANUARY
+  FEBRUARY
+  MARCH
+  APRIL
+  MAY
+  JUNE
+  JULY
+  AUGUST
+  SEPTEMBER
+  OCTOBER
+  NOVEMBER
+  DECEMBER
+}
+
